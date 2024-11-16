@@ -9,6 +9,7 @@ library(sandwich)
 library(quantreg)
 library(rdd)
 library(ggplot2)
+library(survey)
 
 #Load datasets
 data_covid <- read_csv("C:/Users/Stealth/Downloads/covid-19-stringency-index.csv")
@@ -204,6 +205,28 @@ coeftest(reg2, vcov = vcovHC(reg2))
 #time and fixed effects
 reg2b <- lm(imp_free ~ treat + post + treat*post +agea +gndr + eduyrs +factor(essround) + factor(cntry), data = data_did_str)
 coeftest(reg2b, vcov = vcovHC(reg2b))
+
+#postratification 
+ESS_design1 <- svydesign(id = ~idno, data = data_did_str, weights = ~dweight)
+summary(svyglm(imp_free ~ treat + post + treat*post +agea +gndr + eduyrs +factor(essround) + factor(cntry), design = ESS_design1))
+summary(svyglm(imp_free ~ treat + post + treat*post +agea +gndr + eduyrs +factor(essround) + factor(cntry) + factor(essround)*treat, design = ESS_design1))
+
+ESS_design2 <- svydesign(id = ~idno, data = data_did_str, weights = ~pweight)
+summary(svyglm(imp_free ~ treat + post + treat*post +agea +gndr + eduyrs +factor(essround) + factor(cntry), design = ESS_design2))
+summary(svyglm(imp_free ~ agea +gndr + eduyrs +factor(essround) + factor(cntry) + factor(essround)*treat, design = ESS_design2))
+summary(svyglm(imp_free ~ agea +gndr + eduyrs + ppltrst + rlgdgr + gincdif + imp_people+ factor(essround) + factor(cntry) + factor(essround)*treat, design = ESS_design2))
+
+
+data_did_pstr <- subset(data_did_str, !is.na(data_did_str$anweight))
+data_did_pstrat <- subset(data_did_str, !is.na(data_did_str$pspwght))
+
+ESS_design3 <- svydesign(id = ~idno, data = data_did_pstr, weights = ~anweight)
+summary(svyglm(imp_free ~ treat + post + treat*post +agea +gndr + eduyrs +factor(essround) + factor(cntry), design = ESS_design3))
+summary(svyglm(imp_free ~ agea +gndr + eduyrs + ppltrst + rlgdgr + gincdif + imp_people+ factor(essround) + factor(cntry) + factor(essround)*treat, design = ESS_design3))
+
+ESS_design4 <- svydesign(id = ~idno, data = data_did_pstrat, weights = ~pspwght)
+summary(svyglm(imp_free ~ treat + post + treat*post +agea +gndr + eduyrs +factor(essround) + factor(cntry), design = ESS_design4))
+summary(svyglm(imp_free ~ agea +gndr + eduyrs +factor(essround) + factor(cntry) + factor(essround)*treat, design = ESS_design4))
 
 
 #####
